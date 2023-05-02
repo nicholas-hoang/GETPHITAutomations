@@ -85,84 +85,77 @@ import xlwings as xw
 import tkinter as tk
 from tkinter import filedialog
 
+import os
+import pandas as pd
+import shutil
+import pathlib
+import tkinter as tk
+from tkinter import filedialog
+
+
 class Solution:
-    def __init__ (self):
+    def __init__(self):
         self.file = None
         self.evaluation = None
-
-    def select_registration_file(self):
-        self.file = filedialog.askopenfilename(initialdir = ".", title = "Select Registration File",
-                                               filetypes = (("Excel files", "*.xlsx"), ("all files", "*.*")))
-
-    def select_evaluation_file(self):
-        self.evaluation = filedialog.askopenfilename(initialdir = ".", title = "Select Evaluation File",
-                                                     filetypes = (("Excel files", "*.xlsx"), ("all files", "*.*")))
 
     def load_data(self):
         if self.file is not None and self.evaluation is not None:
             student_registration = pd.read_excel(self.file)
-            student_registration = student_registration.rename(columns={
-                'Registration Date': 'Registration_Date',
-                'First Name': 'First_Name',
-                'Last Name': 'Last_Name'
-            })
+            student_registration = student_registration.rename(
+                columns={
+                    'Registration Date': 'Registration_Date',
+                    'First Name': 'First_Name',
+                    'Last Name': 'Last_Name'
+                }
+            )
             student_registration.Registration_Date = student_registration.Registration_Date.dt.strftime('%m/%d/%Y')
-
-            with open(self.evaluation, 'r') as f:
-                evaluation_form = pd.read_excel(f)
+            evaluation_form = pd.read_excel(self.evaluation)
 
             return student_registration, evaluation_form
-
         else:
             print("Please select files")
             return None, None
 
-    def get_full_name(self, row):
-        fullname = row.First_Name + "_" + row.Last_Name
-        return fullname
+    def select_registration_file(self):
+        self.file = filedialog.askopenfilename(
+            initialdir=".",
+            title="Select Registration File",
+            filetypes=(("Excel files", "*.xlsx"), ("all files", "*.*"))
+        )
 
-    def load_registration_file(self):
-        student_registration = pd.read_excel(self.file)
-        student_registration = student_registration.rename(columns = {'Registration Date':'Registration_Date',
-        'First Name':'First_Name','Last Name':'Last_Name'})
-        student_registration.Registration_Date = student_registration.Registration_Date.dt.strftime('%m/%d/%Y')
+    def select_evaluation_file(self):
+        self.evaluation = filedialog.askopenfilename(
+            initialdir=".",
+            title="Select Evaluation File",
+            filetypes=(("Excel files", "*.xlsx"), ("all files", "*.*"))
+        )
 
-        return student_registration
+    def create_student_folders(self):
+        student_registration, _ = self.load_data()
+        if student_registration is not None:
+            for _, row in student_registration.iterrows():
+                folder_name = f"{row['First_Name']}_{row['Last_Name']}"
+                os.mkdir(folder_name.title())
+        else:
+            print("Failed to load data.")
 
-    def get_first_last_name(self, row):
-        fullname = row.First_Name + " " + row.Last_Name
-        return fullname
-
-    def get_existing_folders(self):
-        num_of_docs = [directory for directory in os.listdir('.') if os.path.isdir(os.path.join(".", directory))]
-        print(f'There are a total of {len(num_of_docs)} student folders in this directory.')
-        return num_of_docs
-
-    def create_new_folders(self, df):
-        count = 0
-        student_names = pd.Series(df.full_name)
-
-        for student in student_names:
-            os.mkdir(student.title()) # Create Student Folder
-            count +=1
-
-        print(f'A total of {count} student folders were generated.')
-
-    def fill_folders(self, source):
-        path = pathlib.Path('.')
-        for item in path.iterdir():
-            if item.is_dir():
-                shutil.copy2(source, item) # Place Form in Folder
+    def copy_evaluation_form(self):
+        _, evaluation_form = self.load_data()
+        if evaluation_form is not None:
+            for folder_name in os.listdir('.'):
+                if os.path.isdir(folder_name):
+                    shutil.copy2(evaluation_form, folder_name)
+        else:
+            print("Failed to load data.")
 
     def rename_files(self):
-        path = pathlib.Path('.')
-        for folder in path.iterdir():
-            if folder.is_dir():
-                for file in folder.iterdir():
-                    if file.suffix == ".xlsx":
-                        os.rename(file, folder / (folder.name + ".xlsx"))
-                    elif file.suffix == ".pdf":
-                        os.rename(file, folder / (folder.name + ".pdf"))
+        for folder_name in os.listdir('.'):
+            if os.path.isdir(folder_name):
+                folder_path = pathlib.Path(folder_name)
+                for file in folder_path.iterdir():
+                    if file.name.endswith('.xlsx'):
+                        new_file_name = f"{folder_name}.xlsx"
+                        file.rename(new_file_name)
 
     def run(self):
         root = tk.Tk()
@@ -174,9 +167,28 @@ class Solution:
 
         # Evaluation file button
         eval_file_button = tk.Button(root, text="Select Evaluation File", command=self.select_evaluation_file)
-        eval_file_button.pack(pady=
+        eval_file_button.pack(pady=10)
 
-class 
+        # Load files button
+        load_files_button = tk.Button(root, text="Load Files", command=self.load_data)
+        load_files_button.pack(pady=10)
+
+        # Create folders button
+        create_folders_button = tk.Button(root, text="Create Folders", command=self.create_student_folders)
+        create_folders_button.pack(pady=10)
+
+        # Copy evaluation form button
+        copy_form_button = tk.Button(root, text="Copy Evaluation Form", command=self.copy_evaluation_form)
+        copy_form_button.pack(pady=10)
+
+        # Rename files button
+        rename_files_button = tk.Button(root, text="Rename Files", command=self.rename_files)
+        rename_files_button.pack(pady=10)
+
+        root.mainloop()
+
+
+class
 
 
 
