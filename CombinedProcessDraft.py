@@ -29,6 +29,30 @@ from email.parser import BytesParser
 from email.policy import default
 from bs4 import BeautifulSoup
 
+#GUI Modules
+import os
+import pandas as pd
+import numpy as np
+import shutil
+import pathlib
+import xlwings as xw
+import tkinter as tk
+from tkinter import filedialog
+
+import os
+import pandas as pd
+import shutil
+import pathlib
+import tkinter as tk
+from tkinter import filedialog
+
+# Student Grading Evaluation Form
+import glob
+import pathlib
+import os
+import pandas as pd
+import numpy as np
+
 
 class RegistrationFormPDFGenerator:
     def __init__(self, student_files):
@@ -75,23 +99,7 @@ class RegistrationFormPDFGenerator:
         print('Done!')
         print('All PDFs have been moved to the Generated PDFs folder.')
 
-#
-import os
-import pandas as pd
-import numpy as np
-import shutil
-import pathlib
-import xlwings as xw
-import tkinter as tk
-from tkinter import filedialog
-
-import os
-import pandas as pd
-import shutil
-import pathlib
-import tkinter as tk
-from tkinter import filedialog
-
+# GUI for RegistrationFormPDFGenerator
 
 class Solution:
     def __init__(self):
@@ -188,9 +196,56 @@ class Solution:
         root.mainloop()
 
 
-class
+
+class StudentEvaluations:
+    def __init__(self):
+        self.files = []
+        self.student_evals = pd.DataFrame(columns=['Student Name', 'Grader 1', 'Grader 2', 'Score 1', 'Score 2'])
+
+    def prompt_user_for_folder(self):
+        folder_path = input("Please enter the path to the folder containing the student folders: ")
+        path = pathlib.Path(folder_path)
+
+        for folder in path.iterdir():
+            if folder.is_dir():
+                for file in folder.iterdir():
+                    if file.is_file() and file.suffix == '.xlsx':
+                        self.files.append(file)
+
+    def write_scores(self):
+        for file in self.files:
+            # read data from file
+            data = pd.read_excel(file)
+
+            try:
+                student_name = data.iloc[1,1]
+                grader_1 = data.iloc[4,0]
+                grader_2 = data.iloc[5,0]
+
+                # Check if there are enough rows and columns in the data frame
+                if data.shape[0] >= 5 and data.shape[1] >= 8:
+                    score_1 = data.iloc[4,7]
+                    score_2 = data.iloc[5,7]
+                    average = (score_1 + score_2) / 2
+                    new_row = pd.DataFrame({'Student Name': [student_name], 'Grader 1': [grader_1], 'Grader 2': [grader_2], 'Score 1': [score_1], 'Score 2': [score_2], 'Average': [average]})
+                    self.student_evals = pd.concat([self.student_evals, new_row], ignore_index=True)
+
+            except IndexError:
+                continue
+
+        # Write the data frame to Excel
+        self.student_evals.to_excel('student_evals.xlsx', index=False)
+
+        # return the full Excel file
+        return pd.read_excel('student_evals.xlsx')
 
 
+
+
+
+# Example usage for Solution class
+solution = Solution()
+solution.run()
 
 
 # Example usage:
@@ -198,3 +253,9 @@ generator = RegistrationFormPDFGenerator(glob.glob('*.eml'))
 name_dict = generator.extract_file_url()
 generator.generate_pdfs()
 generator.move_pdfs()
+
+
+# Example usage for StudentEvaluations class
+evals = StudentEvaluations()
+evals.prompt_user_for_folder()
+evals.write_scores()
